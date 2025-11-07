@@ -1,0 +1,52 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: tablelog-app
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html
+    environment:
+      - TZ=Asia/Seoul
+    depends_on:
+      - db
+      - redis
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: tablelog-nginx
+    ports: 
+      - "8080:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: tablelog-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 76001870sb
+      MYSQL_DATABASE: tablelog
+      MYSQL_USER: tablelog
+      MYSQL_PASSWORD: tablelog
+      TZ: Asia/Seoul
+    ports:
+      - "3307:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    container_name: tablelog-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  db-data:
+  redis-data:
