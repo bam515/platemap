@@ -2,18 +2,15 @@
 erDiagram
   TENANTS ||--o{ STORES : has
   TENANTS ||--o{ USERS : has
-  TENANTS ||--o{ TABLES : has
   TENANTS ||--o{ MENU_CATEGORIES : has
-  TENANTS ||--o{ MENU_ITEMS : has
-  TENANTS ||--o{ RESERVATIONS : has
-  TENANTS ||--o{ ORDERS : has
-  TENANTS ||--o{ PAYMENTS : has
-  TENANTS ||--o{ REVIEWS : has
 
   STORES ||--o{ TABLES : has
   STORES ||--o{ RESERVATIONS : has
   STORES ||--o{ ORDERS : has
   STORES ||--o{ REVIEWS : has
+  STORES ||--o{ MENU_CATEGORIES : has
+  
+  TABLES ||--o{ ORDERS : has
 
   USERS ||--o{ RESERVATIONS : makes
   USERS ||--o{ REVIEWS : writes
@@ -26,6 +23,8 @@ erDiagram
   ORDERS ||--o{ PAYMENTS : paid_by
 
   MENU_CATEGORIES ||--o{ MENU_ITEMS : includes
+  
+  MENU_ITEMS ||--o{ ORDER_ITEMS : includes
 
   TENANTS {
     bigint id
@@ -40,8 +39,12 @@ erDiagram
     bigint tenant_id
     string name
     string email
+    datetime email_verified_at
     string password
     string role
+    string remember_token
+    datetime created_at
+    datetime updated_at
   }
 
   STORES {
@@ -54,7 +57,6 @@ erDiagram
 
   TABLES {
     bigint id
-    bigint tenant_id
     bigint store_id
     string name
     int capacity
@@ -69,7 +71,6 @@ erDiagram
 
   MENU_ITEMS {
     bigint id
-    bigint tenant_id
     bigint store_id
     bigint menu_category_id
     string name
@@ -78,7 +79,6 @@ erDiagram
 
   RESERVATIONS {
     bigint id
-    bigint tenant_id
     bigint store_id
     bigint table_id
     bigint customer_id
@@ -89,7 +89,6 @@ erDiagram
 
   ORDERS {
     bigint id
-    bigint tenant_id
     bigint store_id
     bigint table_id
     bigint reservation_id
@@ -108,7 +107,6 @@ erDiagram
 
   PAYMENTS {
     bigint id
-    bigint tenant_id
     bigint order_id
     bigint user_id
     bigint amount
@@ -118,7 +116,6 @@ erDiagram
 
   REVIEWS {
     bigint id
-    bigint tenant_id
     bigint store_id
     bigint user_id
     bigint reservation_id
