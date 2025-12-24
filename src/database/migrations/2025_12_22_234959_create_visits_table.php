@@ -30,7 +30,7 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index(['user_id', 'created_at']);
-            $table->index(['place_id', 'visited_at_at']);
+            $table->index(['place_id', 'visited_at']);
             $table->index(['visibility', 'published_at']);
         });
     }
