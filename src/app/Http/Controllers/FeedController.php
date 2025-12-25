@@ -27,8 +27,10 @@ class FeedController extends Controller
                     )->where('is_hidden', false)
                         ->orderBy('sort_order');
                 }
-            ])
-            ->where('user_id', $userId)
+            ])->withCount('likes')
+            ->withExists([
+                'likes as liked_by_me' => fn ($q) => $q->where('user_id', $userId)
+            ])->where('user_id', $userId)
             ->whereNotNull('published_at')
             ->where('is_hidden', false)
             ->orderByDesc('published_at')
@@ -36,15 +38,6 @@ class FeedController extends Controller
             ->get();
 
         $items = $visits->map(function (Visit $visit) {
-            $dishLogs = $visit->dishLogs->map(fn ($d) => [
-                'id' => $d->id,
-                'dish_name' => $d->dish_name,
-                'memo' => $d->memo,
-                'would_reorder' => (bool) $d->would_reorder,
-                'photo_url' => $d->photo_url,
-                'sort_order' => (int) $d->sort_order
-            ]);
-
             return [
                 'visit_id' => $visit->id,
                 'published_at' => $visit->published_at,
@@ -58,9 +51,15 @@ class FeedController extends Controller
                     'lng' => $visit->place->lng,
                     'address' => $visit->place->address
                 ],
-                'dish_logs' => $dishLogs,
-                'liked_by_me' => false,
-                'like_count' => 0   // TODO likes 기능 개발 필요
+                'dish_logs' => $visit->dishLogs->map(fn ($d) => [
+                    'id' => $d->id,
+                    'dish_name' => $d->dish_name,
+                    'would_reorder' => (bool) $d->would_reorder,
+                    'photo_url' => $d->photo_url,
+                    'sort_order' => (int) $d->sort_order,
+                ]),
+                'liked_by_me' => (bool) $visit->liked_by_me,
+                'like_count' => (int) $visit->likes_count
             ];
         });
 
