@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -11,34 +12,41 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
+    protected $model = User::class;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
+        static $hashedPassword;
+
+        $hashedPassword ??= Hash::make('password');
+
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'nickname' => $this->faker->unique()->userName(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'password' => $hashedPassword,
+            'provider' => null,
+            'provider_id' => null,
+            'avatar_url' => $this->faker->boolean(25) ? $this->faker->imageUrl(256, 256, 'people') : null,
+            'bio' => $this->faker->boolean(40) ? $this->faker->sentence(10) : null,
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+        return $this->state(fn() => [
+            'email_verified_at' => null
+        ]);
+    }
+
+    public function google(): static
+    {
+        return $this->state(fn() => [
+            'provider' => 'google',
+            'provider_id' => (string) Str::uuid(),
+            'password' => null,
+            'email_verified_at' => now()
         ]);
     }
 }

@@ -12,7 +12,22 @@ class FeedController extends Controller
     {
         $userId = $request->user()->id;
 
-        $visits = Visit::query()
+        $limit = (int) $request->input('limit', 20);
+        $limit = max(1, min($limit, 50));
+
+        $cursor = $request->input('cursor');
+
+        $paginator = Visit::query()
+            ->select([
+                'id',
+                'user_id',
+                'place_id',
+                'published_at',
+                'visited_at',
+                'visibility',
+                'memo',
+                'is_hidden'
+            ])
             ->with([
                 'place:id,name,lat,lng,address',
                 'dishLogs' => function ($q) {
@@ -34,23 +49,23 @@ class FeedController extends Controller
             ->whereNotNull('published_at')
             ->where('is_hidden', false)
             ->orderByDesc('published_at')
-            ->limit(20)
-            ->get();
+            ->orderByDesc('id')
+            ->cursorPaginate($limit, ['*'], 'cursor', $cursor);
 
-        $items = $visits->map(function (Visit $visit) {
+        $items = collect($paginator->items())->map(function (Visit $visit) {
             return [
                 'visit_id' => $visit->id,
                 'published_at' => $visit->published_at,
                 'visited_at' => $visit->visited_at,
                 'visibility' => $visit->visibility,
                 'memo' => $visit->memo,
-                'place' => [
+                'place' => $visit->place ? [
                     'id' => $visit->place->id,
                     'name' => $visit->place->name,
                     'lat' => $visit->place->lat,
                     'lng' => $visit->place->lng,
                     'address' => $visit->place->address
-                ],
+                ] : null,
                 'dish_logs' => $visit->dishLogs->map(fn ($d) => [
                     'id' => $d->id,
                     'dish_name' => $d->dish_name,
@@ -61,11 +76,11 @@ class FeedController extends Controller
                 'liked_by_me' => (bool) $visit->liked_by_me,
                 'like_count' => (int) $visit->likes_count
             ];
-        });
+        })->values();
 
         return response()->json([
             'items' => $items,
-            'next_cursor' => null   // TODO cursor pagination 개발 필요
+            'next_cursor' => $paginator->nextCursor()?->encode()
         ]);
     }
 }
